@@ -100,11 +100,16 @@ func (m *ConnectionManager) _connect(uri string) {
 		parent = websocket.NetConn(m.ctx, c, websocket.MessageBinary)
 	default:
 		var err error
-		dialer := net.Dialer{
-			Timeout: interval,
+		dialer, valid := m.client.Transport.(*http.Transport) //technically not a dialer
+		if !valid {
+			return //not a *http.Transport
 		}
+		dialer.ResponseHeaderTimeout = interval
+
+		//println("pre dial tcp: ", uri)
 		parent, err = dialer.DialContext(ctx, "tcp", uri)
 		if err != nil {
+			//println("post dial failed: ", err.Error())
 			result(err)
 			return
 		}
